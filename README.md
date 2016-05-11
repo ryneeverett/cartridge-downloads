@@ -9,7 +9,7 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 # believe will eventually be merged into upstream. It will cause some
 # "DEPRECATION" noise, but the replacement functionality hasn't been built into
 # pip yet, so we'll have to put up with it.
-pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git@downloads#egg=filebrowser_safe-999 --process-dependency-links
+pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git#egg=cartridge-downloads --process-dependency-links
 
 python manage.py migrate
 ```
