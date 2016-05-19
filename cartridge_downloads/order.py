@@ -2,6 +2,7 @@ from mezzanine.conf import settings
 from cartridge.shop.models import Product
 
 from .models import Purchase
+from .utils import session_downloads
 
 
 def handler(request, form, order):
@@ -9,19 +10,14 @@ def handler(request, form, order):
     products = Product.objects.filter(variations__sku__in=skus)
     digital_products = products.exclude(downloads__isnull=True)
 
-    # Schema: {<download.slug>: <acquisition.id>}
-    customer_acquisitions = request.session.setdefault(
-        'cartridge_downloads', {})
-
     # Create purchase instances and store primary key in the session.
-    for product in digital_products:
-        purchase = Purchase(order=order, product=product)
-        purchase.save()
+    with session_downloads(request) as customer_acquisitions:
+        for product in digital_products:
+            purchase = Purchase(order=order, product=product)
+            purchase.save()
 
-        for download in product.downloads.all():
-            customer_acquisitions[download.slug] = purchase.id
-
-    request.session.modified = True
+            for download in product.downloads.all():
+                customer_acquisitions[download.slug] = purchase.id
 
     # If order is all digital, mark it as processed.
     if (products.count() == digital_products.count() and

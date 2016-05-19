@@ -7,6 +7,7 @@ from mezzanine.forms.models import Form, FormEntry
 from mezzanine.pages.page_processors import processor_for
 
 from .models import Promotion
+from .utils import session_downloads
 
 
 @processor_for(Form)
@@ -31,13 +32,8 @@ def override_mezzanine_form_processor(request, page):
             promotion = Promotion(formentry=formentry)
             promotion.save()
 
-            # Schema: {<download.slug>: <acquisition.id>}
-            customer_acquisitions = request.session.setdefault(
-                'cartridge_downloads', {})
-
-            for download in downloads.all():
-                customer_acquisitions[download.slug] = promotion.id
-
-            request.session.modified = True
+            with session_downloads(request) as customer_acquisitions:
+                for download in downloads.all():
+                    customer_acquisitions[download.slug] = promotion.id
 
             return redirect('downloads_index')
