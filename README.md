@@ -2,6 +2,11 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 
 **THIS IS ALPHAWARE. I RESERVE THE RIGHT TO NUKE THE MIGRATIONS BEFORE THE INITIAL RELEASE.**
 
+# Features
+
+- Adds download fields to the `Product` admin, which are available upon order completion.
+- Adds download fields to the `Form` admin, which are available upon form completion.
+
 # Installation
 
 ```sh
@@ -28,9 +33,10 @@ FILEBROWSER_SELECT_FORMATS = {
 ...
 INSTALLED_APPS = (
 ...
-    'cartridge_downloads',  # Before cartridge.shop.
-    ...
-    'cartridge.shop',
+    # Must be after mezzanine.forms or promotional downloads will not work.
+    'mezzanine.forms',
+...
+    'cartridge_downloads',
 ...
 )
 ```

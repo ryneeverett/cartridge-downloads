@@ -7,6 +7,7 @@ chardet==2.3.0
 Django==1.9.6
 django-contrib-comments==1.7.1
 django-downloadview==1.9
+django-model-utils==2.5
 filebrowser-safe==999
 future==0.15.2
 grappelli-safe==0.4.2

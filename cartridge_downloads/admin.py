@@ -3,6 +3,7 @@ from django.core import urlresolvers
 from django.utils import safestring
 
 from cartridge.shop.admin import ProductAdmin, OrderAdmin
+from mezzanine.forms.admin import FormAdmin
 
 from .models import Download, Purchase
 
@@ -22,9 +23,14 @@ class PurchaseAdmin(admin.ModelAdmin):
         return False
 
 
-class DownloadInline(admin.TabularInline):
+class ProductDownloadInline(admin.TabularInline):
     model = Download.products.through
     verbose_name_plural = 'Downloads'
+
+
+class FormDownloadInline(admin.TabularInline):
+    model = Download.forms.through
+    verbose_name_plural = 'Promotional Downloads'
 
 
 class PurchaseInline(admin.TabularInline):
@@ -45,5 +51,6 @@ class PurchaseInline(admin.TabularInline):
 
 admin.site.register(Download, DownloadAdmin)
 admin.site.register(Purchase, PurchaseAdmin)
-ProductAdmin.inlines += (DownloadInline,)
+ProductAdmin.inlines += (ProductDownloadInline,)
+FormAdmin.inlines += (FormDownloadInline,)
 OrderAdmin.inlines += (PurchaseInline,)

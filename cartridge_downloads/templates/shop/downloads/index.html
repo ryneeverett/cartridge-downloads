@@ -2,11 +2,11 @@
 {% load downloads %}
 
 {% block main %}
-  {% for product in digital_products %}
+  {% for page in acquisition_pages %}
     <div class="panel panel-default">
-      <div class="panel-heading">{{ product.title }}</div>
+      <div class="panel-heading">{{ page.title }}</div>
       <div class="panel-body">
-        {% for slug in product.downloads|download_slugs %}
+        {% for slug in page.downloads|download_slugs %}
           <a href='{% url 'downloads_download' slug %}'>{{ slug }}</a>
         {% endfor %}
       </div>

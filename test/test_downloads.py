@@ -12,16 +12,19 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import PermissionDenied
 from django.forms import HiddenInput, NumberInput
 
+from mezzanine.forms.models import Form
 from cartridge.shop.models import (
-    Cart, CartItem, Order, OrderItem, Product, ProductVariation)
+    Cart, Order, OrderItem, Product, ProductVariation)
+
+from django_downloadview.test import temporary_media_root
 
 from cartridge_downloads.admin import DownloadAdmin
+from cartridge_downloads.page_processors import (
+    override_mezzanine_form_processor)
 from cartridge_downloads.models import Download, Purchase
 from cartridge_downloads.order import handler
 from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
-
-from django_downloadview.test import temporary_media_root
 
 
 class DownloadModelTests(test.TestCase):
@@ -102,6 +105,33 @@ class OrderHandlerTests(test.TestCase):
         self.assertEqual(self.request.session['cartridge_downloads'], {})
         self.assertFalse(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 1)
+
+
+class OverrideMezzanineFormProcessorTests(test.TestCase):
+    def setUp(self):
+        self.request = test.RequestFactory().post('/', data={'not': 'None'})
+        SessionMiddleware().process_request(self.request)
+        self.request.session.save()
+
+        self.page = Form.objects.create()
+        self.page.save()
+
+    def test_downloads(self):
+        download = Download.objects.create(file='test_downloads.ext')
+        self.page.downloads.add(download)
+        self.page.save()
+
+        response = override_mezzanine_form_processor(self.request, self.page)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/downloads/')
+
+        self.assertIn(download.slug,
+                      self.request.session['cartridge_downloads'])
+
+    def test_no_downloads(self):
+        response = override_mezzanine_form_processor(self.request, self.page)
+        self.assertIsNone(response)
+        self.assertNotIn('cartridge_downloads', self.request.session)
 
 
 class SignalTests(test.TestCase):

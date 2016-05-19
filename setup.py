@@ -6,6 +6,7 @@ setuptools.setup(
     install_requires=[
         'cartridge',
         'django-downloadview',
+        'django-model-utils',
         'filebrowser_safe==999',
     ],
     dependency_links=[

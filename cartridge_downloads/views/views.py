@@ -5,11 +5,9 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import F
 from django.shortcuts import redirect, render
 
-from cartridge.shop.models import Product
-
 from django_downloadview import ObjectDownloadView
 
-from ..models import Purchase, Download
+from ..models import Acquisition, Download
 
 # https://docs.djangoproject.com/en/stable/topics/logging/#django-request
 logger = logging.getLogger('django.request')
@@ -22,11 +20,15 @@ def index(request):
         logger.warning('Cookie not found.', exc_info=True)
         raise PermissionDenied
 
-    digital_products = Product.objects.filter(
-        purchase__id__in=downloads.values())
+    acquisition_pages = [
+        acq.page for acq in
+        Acquisition.objects.filter(id__in=downloads.values())
+        .select_subclasses()
+    ]
+
     return render(request,
                   'shop/downloads/index.html',
-                  {'digital_products': digital_products})
+                  {'acquisition_pages': acquisition_pages})
 
 
 class CartridgeDownloadView(ObjectDownloadView):
@@ -40,9 +42,9 @@ class CartridgeDownloadView(ObjectDownloadView):
                 exc_info=True)
             raise PermissionDenied
 
-        purchase = Purchase.objects.get(id=purchase_id)
+        acquisition = Acquisition.objects.get_subclass(id=purchase_id)
 
-        if purchase.download_count >= purchase.download_limit:
+        if acquisition.download_count >= acquisition.download_limit:
             # Do nothing if the download limit has been reached.
             messages.add_message(
                 request,
@@ -51,8 +53,8 @@ class CartridgeDownloadView(ObjectDownloadView):
             return redirect(request.META.get('HTTP_REFERER', '/'))
         else:
             # Proceed with download.
-            purchase.download_count = F('download_count') + 1
-            purchase.save()
+            acquisition.download_count = F('download_count') + 1
+            acquisition.save()
 
             return super(CartridgeDownloadView, self).get(self, request, slug)
 

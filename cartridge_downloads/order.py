@@ -5,12 +5,13 @@ from .models import Purchase
 
 
 def handler(request, form, order):
-    # Schema: {<download.slug>: <purchase.id>}
-    customer_purchases = request.session.setdefault('cartridge_downloads', {})
-
     skus = order.items.values_list('sku', flat=True)
     products = Product.objects.filter(variations__sku__in=skus)
     digital_products = products.exclude(downloads__isnull=True)
+
+    # Schema: {<download.slug>: <acquisition.id>}
+    customer_acquisitions = request.session.setdefault(
+        'cartridge_downloads', {})
 
     # Create purchase instances and store primary key in the session.
     for product in digital_products:
@@ -18,7 +19,9 @@ def handler(request, form, order):
         purchase.save()
 
         for download in product.downloads.all():
-            customer_purchases[download.slug] = purchase.id
+            customer_acquisitions[download.slug] = purchase.id
+
+    request.session.modified = True
 
     # If order is all digital, mark it as processed.
     if (products.count() == digital_products.count() and

@@ -4,12 +4,16 @@ from django.db import models
 from mezzanine.conf import settings
 from mezzanine.core.fields import FileField
 
+from model_utils.managers import InheritanceManager
+
 
 class Download(models.Model):
     file = FileField(upload_to='downloads', format=(
         'Download' if 'Download' in settings.FILEBROWSER_SELECT_FORMATS
         else ''))
+
     products = models.ManyToManyField('shop.Product', related_name='downloads')
+    forms = models.ManyToManyField('forms.Form', related_name='downloads')
 
     slug = models.SlugField(unique=True, editable=False)
 
@@ -42,14 +46,38 @@ class Download(models.Model):
         super(Download, self).validate_unique(*args, **kwargs)
 
 
-class Purchase(models.Model):
-    order = models.ForeignKey(
-        'shop.Order', on_delete=models.PROTECT, editable=False)
-    product = models.ForeignKey(
-        'shop.Product', on_delete=models.PROTECT, editable=False)
-
+class Acquisition(models.Model):
     download_count = models.IntegerField(default=0,
                                          editable=False,
                                          verbose_name='Download Count')
     download_limit = models.IntegerField(default=5,
                                          verbose_name='Download Limit')
+
+    objects = InheritanceManager()
+
+    @property
+    def page(self):
+        """
+        Return a related model which must have 'title' and 'downloads' fields.
+        """
+        raise NotImplementedError
+
+
+class Purchase(Acquisition):
+    order = models.ForeignKey(
+        'shop.Order', on_delete=models.PROTECT, editable=False)
+    product = models.ForeignKey(
+        'shop.Product', on_delete=models.PROTECT, editable=False)
+
+    @property
+    def page(self):
+        return self.product
+
+
+class Promotion(Acquisition):
+    formentry = models.ForeignKey(
+        'forms.FormEntry', on_delete=models.PROTECT, editable=False)
+
+    @property
+    def page(self):
+        return self.formentry.form
