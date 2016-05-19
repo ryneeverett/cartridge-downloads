@@ -244,10 +244,6 @@ class OverrideViewTests(test.TestCase):
             product=self.digital_product, sku=4)
         digital_product_variation.save()
 
-        # Moneky patch product model to avoid having to configure urls.
-        conventional_product.get_absolute_url = lambda: ''
-        self.digital_product.get_absolute_url = lambda: ''
-
         self.request.cart.add_item(conventional_product_variation, 5)
         self.request.cart.add_item(digital_product_variation, 5)
 
