@@ -3,14 +3,12 @@ from django.template import RequestContext
 
 from mezzanine.forms.forms import FormForForm
 from mezzanine.forms.page_processors import form_processor
-from mezzanine.forms.models import Form, FormEntry
-from mezzanine.pages.page_processors import processor_for
+from mezzanine.forms.models import FormEntry
 
 from .models import Promotion
 from .utils import session_downloads
 
 
-@processor_for(Form)
 def override_mezzanine_form_processor(request, page):
     """ Override mezzanine.forms.page_processors.form_processor """
     if request.method == 'POST':
