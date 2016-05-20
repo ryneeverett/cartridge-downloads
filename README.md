@@ -57,6 +57,14 @@ urlpatterns = [
 ]
 ```
 
+# How it works
+
+There's quite a bit more going on than this, but it's mostly UI hacks. Here's a summary of the mechanics:
+
+1. Monkey patch an inline to our `Download` model onto cartridge/mezzanine's `ProductAdmin`/`FormAdmin`.
+2. When a user successfully submits an order/form, create an `Acquisition` referencing the `Download`s, add a reference to it to their session, and direct them to the `/downloads/` view.
+3. The `/downloads/` view looks at the `Acquisitions` in the user's session and only links to `Download`s they have acquired.
+
 # Development
 
 ```sh
