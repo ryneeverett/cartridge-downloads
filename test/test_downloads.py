@@ -135,7 +135,7 @@ class OverrideMezzanineFormProcessorTests(test.TestCase):
 
 
 class SignalTests(test.TestCase):
-    def test_clean_downloads(self):
+    def test_purge_downloads(self):
         """ When products are deleted, remove downloads with no product. """
         surviving_product = Product.objects.create()
         surviving_product.save()

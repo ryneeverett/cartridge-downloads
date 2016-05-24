@@ -1,12 +1,12 @@
-from django.db.models.signals import pre_delete
+from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
 from cartridge.shop.models import Product
 
+from .models import Download
 
-@receiver(pre_delete, sender=Product)
-def clean_downloads(sender, **kwargs):
-    """ When a product is deleted, delete dangling related downloads. """
-    for download in kwargs['instance'].downloads.all():
-        if download.products.count() == 1:
-            download.delete()
+
+@receiver(post_delete, sender=Product)
+def purge_downloads(sender, **kwargs):
+    """ When a product is deleted, delete dangling downloads. """
+    Download.objects.filter(products=None).delete()
