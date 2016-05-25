@@ -14,7 +14,7 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 # believe will eventually be merged into upstream. It will cause some
 # "DEPRECATION" noise, but the replacement functionality hasn't been built into
 # pip yet, so we'll have to put up with it.
-pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git#egg=cartridge-downloads --process-dependency-links
+pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git#egg=cartridge-downloads --process-dependency-links -c constraints.txt
 
 python manage.py migrate
 ```
@@ -69,6 +69,6 @@ There's quite a bit more going on than this, but it's mostly UI hacks. Here's a 
 
 ```sh
 cd cartridge-downloads
-python setup.py develop
+pip install -e . --process-dependency-links -c constraints.txt
 python test
 ```
