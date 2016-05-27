@@ -135,27 +135,55 @@ class OverrideMezzanineFormProcessorTests(test.TestCase):
 
 
 class SignalTests(test.TestCase):
-    def test_purge_downloads(self):
-        """ When products are deleted, remove downloads with no product. """
-        surviving_product = Product.objects.create()
-        surviving_product.save()
+    @classmethod
+    def setUpClass(cls):
+        cls.surviving_product = Product.objects.create()
+        cls.surviving_product.save()
 
+        cls.surviving_download = Download.objects.create(slug='survivor')
+        cls.surviving_download.products.add(cls.surviving_product)
+        cls.surviving_download.save()
+
+        super(SignalTests, cls).setUpClass()
+
+    def setUp(self):
+        self.doomed_download = Download.objects.create(slug='doomed')
+        self.doomed_download.save()
+
+    def test_purge_downloads_on_delete(self):
+        """ When products are deleted, remove downloads with no product. """
         doomed_product = Product.objects.create()
         doomed_product.save()
 
-        surviving_download = Download.objects.create(slug='survivor')
-        surviving_download.products.add(surviving_product)
-        surviving_download.products.add(doomed_product)
-        surviving_download.save()
+        self.surviving_download.products.add(doomed_product)
+        self.surviving_download.save()
 
-        doomed_download = Download.objects.create(slug='doomed')
-        doomed_download.products.add(doomed_product)
-        doomed_download.save()
+        self.doomed_download.products.add(doomed_product)
+        self.doomed_download.save()
 
         self.assertTrue(Download.objects.filter(slug='doomed').exists())
 
         doomed_product.delete()
         doomed_product.save()
+
+        self.assertTrue(Download.objects.filter(slug='survivor').exists())
+        self.assertFalse(Download.objects.filter(slug='doomed').exists())
+
+    def test_purge_downloads_on_change(self):
+        """ When downloads are removed from a ManyToManyField, purge. """
+        product = Product.objects.create()
+        product.save()
+
+        self.surviving_download.products.add(product)
+        self.surviving_download.save()
+
+        self.doomed_download.products.add(product)
+        self.doomed_download.save()
+
+        self.assertTrue(Download.objects.filter(slug='doomed').exists())
+
+        product.downloads.remove(self.doomed_download)
+        product.save()
 
         self.assertTrue(Download.objects.filter(slug='survivor').exists())
         self.assertFalse(Download.objects.filter(slug='doomed').exists())
