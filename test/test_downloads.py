@@ -14,7 +14,7 @@ from django.forms import HiddenInput, NumberInput
 
 from mezzanine.forms.models import Form
 from cartridge.shop.models import (
-    Cart, Order, OrderItem, Product, ProductVariation)
+    Cart, Order, OrderItem, Product, ProductOption, ProductVariation)
 
 from django_downloadview.test import temporary_media_root
 
@@ -67,15 +67,28 @@ class DownloadModelTests(test.TestCase):
 
 
 class OrderHandlerTests(test.TestCase):
+    variation_sku = 0
+
+    @classmethod
+    def setUpClass(cls):
+        option = ProductOption.objects.create(type=1, name='Download Only')
+        option.save()
+
+        super(OrderHandlerTests, cls).setUpClass()
+
     def setUp(self):
-        self.order = Order.objects.get_or_create()[0]
+        self.order = Order.objects.create()
+        self.product = Product.objects.create()
 
-        self.product = Product.objects.get_or_create()[0]
+        self.download = Download.objects.create()
+        self.download.products.add(self.product)
+        self.download.save()
 
-        variation = ProductVariation.objects.get_or_create(
-            sku=1, product=self.product)[0]
+        self.variation = ProductVariation.objects.create(
+            sku=self.variation_sku, product=self.product)
+        self.variation_sku += 1
 
-        OrderItem.objects.create(order=self.order, sku=variation.sku)
+        OrderItem.objects.create(order=self.order, sku=self.variation.sku)
 
         self.request = test.RequestFactory().get('/')
         SessionMiddleware().process_request(self.request)
@@ -85,21 +98,36 @@ class OrderHandlerTests(test.TestCase):
     def product_is_download_purchase(self):
         return Purchase.objects.filter(product=self.product).exists()
 
-    def test_all_digital(self):
-        """ All products are digital. """
-        download = Download.objects.create()
-        download.products.add(self.product)
-        download.save()
+    def test_all_digital_download_only(self):
+        """
+        All products are digital and all variations are download_only.
+        """
+        self.variation.option1 = 'Download Only'
+        self.variation.save()
 
         handler(self.request, mock.Mock(), self.order)
 
-        self.assertIn(download.slug,
+        self.assertIn(self.download.slug,
                       self.request.session['cartridge_downloads'])
         self.assertTrue(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 2)
 
+    def test_all_digital_no_download_only(self):
+        """
+        All products are digital, but the variations aren't all download_only.
+        """
+        handler(self.request, mock.Mock(), self.order)
+
+        self.assertIn(self.download.slug,
+                      self.request.session['cartridge_downloads'])
+        self.assertTrue(self.product_is_download_purchase)
+        self.assertEqual(self.order.status, 1)
+
     def test_not_digital(self):
         """ Non-digital products. """
+        self.product.downloads.clear()
+        self.product.save()
+
         handler(self.request, mock.Mock(), self.order)
 
         self.assertEqual(self.request.session['cartridge_downloads'], {})

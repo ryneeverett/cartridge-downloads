@@ -7,6 +7,14 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 - Adds download fields to the `Product` admin, which are available upon order completion.
 - Adds download fields to the `Form` admin, which are available upon form completion.
 
+## Product Only Variations *(optional)*
+
+Often times a download is bundled with a physical product -- mp3's may come with a cd or an epub might come with a book. In this case it often makes sense to have one variation for just the download and another for the physical good *and* the download.
+
+Add a `ProductOption` named "Download Only" to any type to enable this feature. When selected:
+
+- Orders consisting solely of "Download Only" products get marked as processed automatically.
+
 # Installation
 
 ```sh
