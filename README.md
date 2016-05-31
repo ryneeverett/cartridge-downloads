@@ -31,7 +31,7 @@ python manage.py migrate
 
 ```py
 # Alternately, you could call this handler method from your own handler.
-SHOP_HANDLER_ORDER = 'cartridge_downloads.order.handler'
+SHOP_HANDLER_ORDER = 'cartridge_downloads.checkout.order_handler'
 ...
 # OPTIONALLY, specify allowed file formats here. Defaults to allowing all.
 FILEBROWSER_SELECT_FORMATS = {

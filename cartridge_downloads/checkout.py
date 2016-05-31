@@ -5,7 +5,7 @@ from .models import Purchase
 from .utils import session_downloads
 
 
-def handler(request, form, order):
+def order_handler(request, form, order):
     skus = order.items.values_list('sku', flat=True)
     variations = ProductVariation.objects.filter(sku__in=skus)
 

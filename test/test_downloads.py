@@ -22,7 +22,7 @@ from cartridge_downloads.admin import DownloadAdmin
 from cartridge_downloads.page_processors import (
     override_mezzanine_form_processor)
 from cartridge_downloads.models import Download, Purchase
-from cartridge_downloads.order import handler
+from cartridge_downloads.checkout import order_handler
 from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
 
@@ -105,7 +105,7 @@ class OrderHandlerTests(test.TestCase):
         self.variation.option1 = 'Download Only'
         self.variation.save()
 
-        handler(self.request, mock.Mock(), self.order)
+        order_handler(self.request, mock.Mock(), self.order)
 
         self.assertIn(self.download.slug,
                       self.request.session['cartridge_downloads'])
@@ -116,7 +116,7 @@ class OrderHandlerTests(test.TestCase):
         """
         All products are digital, but the variations aren't all download_only.
         """
-        handler(self.request, mock.Mock(), self.order)
+        order_handler(self.request, mock.Mock(), self.order)
 
         self.assertIn(self.download.slug,
                       self.request.session['cartridge_downloads'])
@@ -128,7 +128,7 @@ class OrderHandlerTests(test.TestCase):
         self.product.downloads.clear()
         self.product.save()
 
-        handler(self.request, mock.Mock(), self.order)
+        order_handler(self.request, mock.Mock(), self.order)
 
         self.assertEqual(self.request.session['cartridge_downloads'], {})
         self.assertFalse(self.product_is_download_purchase)
