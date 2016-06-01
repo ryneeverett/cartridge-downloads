@@ -92,6 +92,8 @@ class OrderHandlerTests(test.TestCase):
 
         self.request = test.RequestFactory().get('/')
         SessionMiddleware().process_request(self.request)
+        self.request.cart = Cart.objects.create()
+        self.request.cart.add_item(self.variation, 1)
         self.request.session.save()
 
     @property

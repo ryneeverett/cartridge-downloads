@@ -7,13 +7,19 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 - Adds download fields to the `Product` admin, which are available upon order completion.
 - Adds download fields to the `Form` admin, which are available upon form completion.
 
-## Product Only Variations *(optional)*
+## Download Only Variations *(optional)*
 
 Often times a download is bundled with a physical product -- mp3's may come with a cd or an epub might come with a book. In this case it often makes sense to have one variation for just the download and another for the physical good *and* the download.
 
-Add a `ProductOption` named "Download Only" to any type to enable this feature. When selected:
+When orders consist solely of "download only" products, they get:
 
-- Orders consisting solely of "Download Only" products get marked as processed automatically.
+- marked as processed automatically
+- free shipping
+
+To enable this feature:
+
+1. Add a "Download" type to the setting `SHOP_OPTION_TYPE_CHOICES`.
+2. Add a `ProductOption` named "Download Only" to the "Download" type.
 
 # Installation
 
@@ -30,6 +36,9 @@ python manage.py migrate
 ## settings.py
 
 ```py
+# OPTIONALLY, if you're using the "download only" feature and want free shipping for transactions consisting of only those products.
+SHOP_HANDLER_BILLING_SHIPPING = "cartridge_downloads.checkout.billship_handler"
+
 # Alternately, you could call this handler method from your own handler.
 SHOP_HANDLER_ORDER = 'cartridge_downloads.checkout.order_handler'
 ...
