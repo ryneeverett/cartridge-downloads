@@ -8,13 +8,15 @@ from cartridge.shop import views as cartridge_views
 from cartridge.shop.forms import AddProductForm, CartItemFormSet
 from cartridge.shop.models import Product
 
+from ..utils import is_download_only
+
 
 def product(request, slug, **kwargs):
     if request.method == 'GET':
         published_products = Product.objects.published(for_user=request.user)
         product = get_object_or_404(published_products, slug=slug)
 
-        if product.downloads.exists():
+        if is_download_only(product.variations.values_list('sku', flat=True)):
             # Copy form_class to avoid modifying the class itself.
             kwargs['form_class'] = copy.deepcopy(
                 kwargs.get('form_class', AddProductForm))
@@ -34,11 +36,9 @@ def cart(request, slug, **kwargs):
         extra_context = kwargs.setdefault('extra_context', {})
         extra_context['cart_formset'] = cart_formset
 
-        # Figure out the indexes of the download products.
+        # Figure out the indexes of the "download only" products.
         skus = [form.instance.sku for form in cart_formset]
-        products_are_downloads = [
-            Product.objects.get(variations__sku=sku).downloads.exists()
-            for sku in skus]
+        products_are_downloads = [is_download_only([sku]) for sku in skus]
         download_product_indexes = [
             i for i, b in enumerate(products_are_downloads) if b]
 

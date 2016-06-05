@@ -11,10 +11,19 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 
 Often times a download is bundled with a physical product -- mp3's may come with a cd or an epub might come with a book. In this case it often makes sense to have one variation for just the download and another for the physical good *and* the download.
 
+### Product Page
+- When all variations of a product are "download only", it's quantity field is hidden.
+
+### Cart Page
+
+- The quantity field of "download only" variations is forced to "1" and hidden.
+
+### Orders
+
 When orders consist solely of "download only" products, they get:
 
-- marked as processed automatically
-- free shipping
+  - marked as processed automatically
+  - free shipping
 
 To enable this feature:
 

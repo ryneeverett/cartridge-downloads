@@ -297,13 +297,11 @@ class DownloadViewTests(test.TestCase):
 class OverrideViewTests(test.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.digital_product = Product.objects.create(sku=1)
-        cls.digital_product.save()
+        option = ProductOption.objects.create(type=1, name='Download Only')
+        option.save()
 
-        download = Download.objects.get_or_create(
-            file='/path/to/fake/file.ext')[0]
-        download.products.add(cls.digital_product)
-        download.save()
+        cls.product = Product.objects.create(sku=1)
+        cls.product.save()
 
         super(OverrideViewTests, cls).setUpClass()
 
@@ -313,23 +311,22 @@ class OverrideViewTests(test.TestCase):
     def test_cartridge_product(self):
         self.request.user = User.objects.get_or_create(pk=1)[0]
 
-        response = override_cartridge.product(
-            self.request, self.digital_product.slug)
+        response = override_cartridge.product(self.request, self.product.slug)
         product_form = response.context_data['add_product_form']
+        # XXX For some reason this cannot fail so it's a worthless test.
         self.assertIsInstance(product_form.base_fields['quantity'].widget,
                               HiddenInput)
 
-    def test_cartrigdge_cart(self):
+    def test_cartridge_cart(self):
         self.request.cart = Cart.objects.create()
 
-        conventional_product = Product.objects.create(sku=2)
-        conventional_product.save()
-
         conventional_product_variation = ProductVariation.objects.create(
-            product=conventional_product, sku=3)
+            product=self.product, sku=3)
         conventional_product_variation.save()
+
         digital_product_variation = ProductVariation.objects.create(
-            product=self.digital_product, sku=4)
+            product=self.product, sku=4)
+        digital_product_variation.option1 = 'Download Only'
         digital_product_variation.save()
 
         self.request.cart.add_item(conventional_product_variation, 5)

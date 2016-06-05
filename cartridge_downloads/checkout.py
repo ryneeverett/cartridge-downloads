@@ -4,24 +4,7 @@ from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
 from .models import Purchase
-from .utils import session_downloads
-
-
-def is_download_only(skus):
-    """ Are all products downloads? """
-    for option_index, option_name in settings.SHOP_OPTION_TYPE_CHOICES:
-        if option_name == 'Downloads':
-            variations = ProductVariation.objects.filter(sku__in=skus)
-
-            params = {'option' + str(option_index): 'Download Only'}
-            download_only_variations = variations.filter(**params)
-
-            if variations.count() == download_only_variations.count():
-                return True
-            else:
-                break
-
-    return False
+from .utils import is_download_only, session_downloads
 
 
 def billship_handler(request, order_form):
