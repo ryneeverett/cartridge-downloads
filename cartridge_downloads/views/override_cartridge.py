@@ -14,7 +14,7 @@ def product(request, slug, **kwargs):
         published_products = Product.objects.published(for_user=request.user)
         product = get_object_or_404(published_products, slug=slug)
 
-        if product.downloads:
+        if product.downloads.exists():
             # Copy form_class to avoid modifying the class itself.
             kwargs['form_class'] = copy.deepcopy(
                 kwargs.get('form_class', AddProductForm))
