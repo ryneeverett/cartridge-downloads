@@ -1,7 +1,5 @@
 Digital product support for the [Django](https://github.com/django/django)/[Mezzanine](https://github.com/stephenmcd/mezzanine)/[Cartridge](https://github.com/stephenmcd/cartridge) stack, with support for large files with [django_downloadview](https://github.com/benoitbryon/django-downloadview).
 
-**THIS IS ALPHAWARE. I RESERVE THE RIGHT TO NUKE THE MIGRATIONS BEFORE THE INITIAL RELEASE.**
-
 # Features
 
 - Adds download fields to the `Product` admin, which are available upon order completion.
@@ -37,7 +35,7 @@ To enable this feature:
 # been merged into upstream but not released yet. It will cause some
 # "DEPRECATION" noise, but the replacement functionality hasn't been built into
 # pip yet, so we'll have to put up with it.
-pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git#egg=cartridge-downloads --process-dependency-links
+pip install -U -e git+https://github.com/ryneeverett/cartridge-downloads.git@v0.1.0#egg=cartridge-downloads --process-dependency-links
 
 python manage.py migrate
 ```
