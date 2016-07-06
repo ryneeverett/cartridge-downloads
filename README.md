@@ -25,7 +25,7 @@ When orders consist solely of "download only" products, they get:
 
 To enable this feature:
 
-1. Add a "Download" type to the setting `SHOP_OPTION_TYPE_CHOICES`.
+1. Add a "Downloads" type to the setting `SHOP_OPTION_TYPE_CHOICES`.
 2. Add a `ProductOption` named "Download Only" to the "Download" type.
 
 # Installation
