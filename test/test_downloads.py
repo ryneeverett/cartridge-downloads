@@ -1,6 +1,9 @@
 import os.path
 import shutil
-from unittest import mock
+try:
+    from unittest import mock
+except ImportError:  # python2
+    import mock
 
 from django import test
 from django.conf import settings

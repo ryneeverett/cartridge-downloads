@@ -94,5 +94,16 @@ There's quite a bit more going on than this, but it's mostly UI hacks. Here's a 
 ```sh
 cd cartridge-downloads
 pip install -e . --process-dependency-links -c constraints.txt
+
+# If python2:
+pip install mock
+
 python test
+```
+
+## Running Tests In Multiple Environments
+
+```sh
+pip install tox
+tox
 ```
