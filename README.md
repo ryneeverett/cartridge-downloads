@@ -35,7 +35,7 @@ To enable this feature:
 # been merged into upstream but not released yet. It will cause some
 # "DEPRECATION" noise, but the replacement functionality hasn't been built into
 # pip yet, so we'll have to put up with it.
-pip install cartridge-downloads --process-dependency-links
+pip install -U -e git+https://github.com/ryneeverett/cartridge-downloads.git@v0.1.1#egg=cartridge-downloads --process-dependency-links
 
 python manage.py migrate
 ```
