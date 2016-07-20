@@ -1,12 +1,9 @@
 import setuptools
 
-from cartridge_downloads import __version__
-
 setuptools.setup(
     name='cartridge-downloads',
     description=(
         'Digital product support for the Django/Mezzanine/Cartridge stack.'),
-    version=__version__,
     url='https://github.com/ryneeverett/cartridge-downloads',
     author='Ryne Everett',
     author_email='ryneeverett@gmail.com',
@@ -32,4 +29,6 @@ setuptools.setup(
     dependency_links=[
         'git+https://github.com/ryneeverett/filebrowser-safe.git@downloads#egg=filebrowser_safe-999',
     ],
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
 )
