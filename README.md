@@ -81,6 +81,29 @@ urlpatterns = [
 ]
 ```
 
+# Webserver Configuration
+
+## Protecting Files in Production
+
+In development, static assets are served by the development server and as such can be masked by django views. In production, your static assets are served more efficiently by circumventing the wsgi process. As such, you'll need to take action specific to your deployment setup to ensure your downloads are only available to authorized clients.
+
+Here's an example nginx snippet that takes advantage of the fact that nginx directs to the [location](http://nginx.org/en/docs/http/ngx_http_core_module.html#location) block with the longest matching "prefix string" to ensure downloads are only served via django views:
+
+```nginx
+# The longest matching "prefix string" is selected.
+location /static/media/uploads/downloads {
+    proxy_pass http://.example.com;
+}
+
+location /static {
+    alias /path/to/static;
+}
+```
+
+## Download Optimization
+
+Even though they aren't publicly available you probably still want to serve downloads with your webserver for performance. See [the django-downloadview docs](http://django-downloadview.readthedocs.io/en/latest/optimizations/) for details.
+
 # How it works
 
 There's quite a bit more going on than this, but it's mostly UI hacks. Here's a summary of the mechanics:
