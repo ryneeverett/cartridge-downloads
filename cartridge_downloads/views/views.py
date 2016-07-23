@@ -56,6 +56,6 @@ class CartridgeDownloadView(ObjectDownloadView):
             acquisition.download_count = F('download_count') + 1
             acquisition.save()
 
-            return super(CartridgeDownloadView, self).get(self, request, slug)
+            return super(CartridgeDownloadView, self).get(self, request)
 
 download = CartridgeDownloadView.as_view(model=Download)
