@@ -30,9 +30,8 @@ To enable this feature:
 
 # Installation
 
-```sh
-pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git@v0.2.0#egg=cartridge-downloads
-
+```console
+pip install cartridge-downloads
 python manage.py migrate
 ```
 
@@ -110,7 +109,7 @@ There's quite a bit more going on than this, but it's mostly UI hacks. Here's a 
 
 # Development
 
-```sh
+```console
 cd cartridge-downloads
 pip install -e . -c constraints.txt
 
@@ -122,7 +121,7 @@ python test
 
 ## Running Tests In Multiple Environments
 
-```sh
+```console
 pip install tox
 tox
 ```
