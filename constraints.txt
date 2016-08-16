@@ -1,0 +1,3 @@
+# This is the highest version that will work with bleach, yet for some reason
+# it isn't resolved properly.
+html5lib<=0.9999999

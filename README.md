@@ -112,7 +112,7 @@ There's quite a bit more going on than this, but it's mostly UI hacks. Here's a 
 
 ```sh
 cd cartridge-downloads
-pip install -e .
+pip install -e . -c constraints.txt
 
 # If python2:
 pip install mock
