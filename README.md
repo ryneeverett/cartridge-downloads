@@ -31,11 +31,7 @@ To enable this feature:
 # Installation
 
 ```sh
-# This special invocation is to get my branch of filebrowser-safe which has
-# been merged into upstream but not released yet. It will cause some
-# "DEPRECATION" noise, but the replacement functionality hasn't been built into
-# pip yet, so we'll have to put up with it.
-pip install -U -e git+https://github.com/ryneeverett/cartridge-downloads.git@v0.1.1#egg=cartridge-downloads --process-dependency-links
+pip install -e git+https://github.com/ryneeverett/cartridge-downloads.git@v0.2.0#egg=cartridge-downloads
 
 python manage.py migrate
 ```
@@ -116,7 +112,7 @@ There's quite a bit more going on than this, but it's mostly UI hacks. Here's a 
 
 ```sh
 cd cartridge-downloads
-pip install -e . --process-dependency-links -c constraints.txt
+pip install -e .
 
 # If python2:
 pip install mock

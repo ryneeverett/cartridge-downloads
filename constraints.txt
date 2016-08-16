@@ -1,2 +1,0 @@
-# Mezzanine is not compatible with django-1.10 yet.
-django<1.10

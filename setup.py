@@ -24,10 +24,11 @@ setuptools.setup(
         'cartridge',
         'django-downloadview',
         'django-model-utils',
-        'filebrowser_safe==999',
-    ],
-    dependency_links=[
-        'git+https://github.com/ryneeverett/filebrowser-safe.git@downloads#egg=filebrowser_safe-999',
+
+        # 0.4.4 -- FileBrowseField's now return a FileField which is necessary
+        # for django-downloadview.See
+        # https://github.com/stephenmcd/filebrowser-safe/pull/77.
+        'filebrowser_safe>=0.4.4',
     ],
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
