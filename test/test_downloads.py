@@ -117,7 +117,7 @@ class OrderHandlerTests(test.TestCase):
         self.assertTrue(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 2)
 
-    def test_all_digital_no_download_only(self):
+    def test_all_digital_not_download_only(self):
         """
         All products are digital, but the variations aren't all download_only.
         """
