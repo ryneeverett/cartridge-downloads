@@ -4,11 +4,17 @@ import copy
 from django.forms import HiddenInput
 from django.shortcuts import get_object_or_404
 
+from mezzanine.conf import settings
+
 from cartridge.shop import views as cartridge_views
 from cartridge.shop.forms import AddProductForm, CartItemFormSet
-from cartridge.shop.models import Product
+from cartridge.shop.models import Product, ProductVariation
 
-from ..utils import is_download_only
+
+DOWNLOAD_ONLY_OPTION = False
+for option_value, option_name in settings.SHOP_OPTION_TYPE_CHOICES:
+    if option_name == 'Downloads':
+        DOWNLOAD_ONLY_OPTION = {'option' + str(option_value): 'Download Only'}
 
 
 def product(request, slug, **kwargs):
@@ -16,7 +22,10 @@ def product(request, slug, **kwargs):
         published_products = Product.objects.published(for_user=request.user)
         product = get_object_or_404(published_products, slug=slug)
 
-        if is_download_only(product.variations.values_list('sku', flat=True)):
+        # If all product variations are "Download Only":
+        if DOWNLOAD_ONLY_OPTION and (
+                product.variations.count() ==
+                product.variations.filter(**DOWNLOAD_ONLY_OPTION).count()):
             # Copy form_class to avoid modifying the class itself.
             kwargs['form_class'] = copy.deepcopy(
                 kwargs.get('form_class', AddProductForm))
@@ -38,7 +47,10 @@ def cart(request, slug, **kwargs):
 
         # Figure out the indexes of the "download only" products.
         skus = [form.instance.sku for form in cart_formset]
-        products_are_downloads = [is_download_only([sku]) for sku in skus]
+        products_are_downloads = (
+            [ProductVariation.objects.filter(
+                sku__in=[sku], **DOWNLOAD_ONLY_OPTION).exists()
+             for sku in skus] if DOWNLOAD_ONLY_OPTION else [])
         download_product_indexes = [
             i for i, b in enumerate(products_are_downloads) if b]
 
