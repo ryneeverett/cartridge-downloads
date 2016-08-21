@@ -107,6 +107,7 @@ class OrderHandlerTests(test.TestCase):
         """
         All products are digital and all variations are download_only.
         """
+        self.request.cart.is_download_only = True
         self.variation.option1 = 'Download Only'
         self.variation.save()
 
@@ -121,6 +122,7 @@ class OrderHandlerTests(test.TestCase):
         """
         All products are digital, but the variations aren't all download_only.
         """
+        self.request.cart.is_download_only = False
         order_handler(self.request, mock.Mock(), self.order)
 
         self.assertIn(self.download.slug,
@@ -130,6 +132,7 @@ class OrderHandlerTests(test.TestCase):
 
     def test_not_digital(self):
         """ Non-digital products. """
+        self.request.cart.is_download_only = False
         self.product.downloads.clear()
         self.product.save()
 

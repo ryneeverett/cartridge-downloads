@@ -4,14 +4,14 @@ from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
 from .models import Purchase
-from .utils import is_download_only, session_downloads
+from .utils import session_downloads
 
 
 def billship_handler(request, order_form):
     """
     If product is all downloads, do not set shipping (defaults to free).
     """
-    if is_download_only(request.cart.skus()):
+    if request.cart.is_download_only:
         set_shipping(request, "Free shipping", 0)
     else:
         default_billship_handler(request, order_form)
@@ -36,7 +36,7 @@ def order_handler(request, form, order):
                 customer_acquisitions[download.slug] = purchase.id
 
     # If order is all digital, mark it as processed.
-    if (is_download_only(skus) and
+    if (request.cart.is_download_only and
             settings.SHOP_ORDER_STATUS_CHOICES[1] == (2, 'Processed')):
         order.status = 2
         order.save()

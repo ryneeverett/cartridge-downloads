@@ -42,6 +42,10 @@ def cart(request, slug, **kwargs):
         download_product_indexes = [
             i for i, b in enumerate(products_are_downloads) if b]
 
+        # Cache is_download_only.
+        request.cart.is_download_only = bool(
+            len(skus) == len(products_are_downloads))
+
         for i in download_product_indexes:
             # Set quantity to 1.
             cart_formset[i].instance.quantity = 1
