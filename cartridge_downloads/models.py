@@ -58,7 +58,7 @@ class Transaction(models.Model):
     token_hash = models.CharField(max_length=128)
 
     def make_credentials(self):
-        return {'id': self.id, 'token': self.make_token()}
+        return {'id': self.id.hex, 'token': self.make_token()}
 
     def make_token(self):
         token = get_random_string()
