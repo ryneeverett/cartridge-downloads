@@ -2,8 +2,9 @@ Digital product support for the [Django](https://github.com/django/django)/[Mezz
 
 # Features
 
-- Adds download fields to the `Product` admin, which are available upon order completion.
-- Adds download fields to the `Form` admin, which are available upon form completion.
+- Adds download fields to the `Product` admin.
+- Adds download fields to the `Form` admin.
+- Download files are available upon order/form completion and if there is a confirmation email a link is added to the files.
 
 ## Download Only Variations *(optional)*
 
@@ -104,8 +105,8 @@ Even though they aren't publicly available you probably still want to serve down
 There's quite a bit more going on than this, but it's mostly UI hacks. Here's a summary of the mechanics:
 
 1. Monkey patch an inline to our `Download` model onto cartridge/mezzanine's `ProductAdmin`/`FormAdmin`.
-2. When a user successfully submits an order/form, create an `Acquisition` referencing the `Download`s, add a reference to it to their session, and direct them to the `/downloads/` view.
-3. The `/downloads/` view looks at the `Acquisitions` in the user's session and only links to `Download`s they have acquired.
+2. When a user successfully submits an order/form, create a `Transaction` and an `Acquisition` referencing the `Download`s, add transaction credentials to their session and as query params in a link in the confirmation email, and direct them to the `/downloads/` view.
+3. The `/downloads/` view links to `Download`s associated with `Acquisition`s associated with the `Transaction`.
 
 # Development
 

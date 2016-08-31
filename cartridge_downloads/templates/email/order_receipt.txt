@@ -1,0 +1,10 @@
+{% overextends "email/base.txt" %}
+
+{% block main %}
+{{ block.super }}
+
+{% if request.download_url %}
+You can access your downloads at this link: {{ request.download_url }}.
+{% endif %}
+
+{% endblock %}

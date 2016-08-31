@@ -1,0 +1,8 @@
+{% overextends "email/base.html" %}
+
+{% block main %}{{ block.super }}
+
+{% if request.download_url %}
+<p>You can access your downloads at <a href={{ request.download_url }}>this link</a>.
+{% endif %}
+{% endblock %}

@@ -1,3 +1,6 @@
 # This is the highest version that will work with bleach, yet for some reason
 # it isn't resolved properly.
 html5lib<=0.9999999
+
+# 9f93b1ffadcedeb47b6ea0160a9fb1f622e98b8c -- Stop using deprecated template settings.
+-e git+https://github.com/stephenmcd/mezzanine.git@9f93b1ffadcedeb47b6ea0160a9fb1f622e98b8c#egg=mezzanine

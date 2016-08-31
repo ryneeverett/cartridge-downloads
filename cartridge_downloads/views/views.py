@@ -1,4 +1,5 @@
 import logging
+import functools
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
@@ -7,24 +8,46 @@ from django.shortcuts import redirect, render
 
 from django_downloadview import ObjectDownloadView
 
-from ..models import Acquisition, Download
+from ..models import Acquisition, Download, Transaction
+from ..utils import session_downloads
 
 # https://docs.djangoproject.com/en/stable/topics/logging/#django-request
 logger = logging.getLogger('django.request')
 
 
-def index(request):
-    try:
-        downloads = request.session['cartridge_downloads']
-    except KeyError:
-        logger.warning('Cookie not found.', exc_info=True)
-        raise PermissionDenied
+def _authenticate(func):
+    """ View decorator that validates credentials and injects transaction. """
+    @functools.wraps(func)
+    def wrapper(request, *args, **kwargs):
+        id_param = request.GET.get('id')
+        token_param = request.GET.get('token')
 
+        try:
+            with session_downloads(request) as session:
+                if id_param and token_param:
+                    session['id'] = id_param
+                    session['token'] = token_param
+                _id = session['id']
+                token = session['token']
+        except KeyError:
+            logger.warning('Cookie not found.', exc_info=True)
+            raise PermissionDenied
+
+        request.transaction = Transaction.objects.get(id=_id)
+
+        if not request.transaction.check_token(token):
+            raise PermissionDenied
+
+        return func(request, *args, **kwargs)
+    return wrapper
+
+
+@_authenticate
+def index(request):
     acquisition_pages = [
         acq.page for acq in
-        Acquisition.objects.filter(id__in=downloads.values())
-        .select_subclasses()
-    ]
+        Acquisition.objects.filter(
+            transaction=request.transaction).select_subclasses()]
 
     return render(request,
                   'shop/downloads/index.html',
@@ -33,29 +56,28 @@ def index(request):
 
 class CartridgeDownloadView(ObjectDownloadView):
     def get(self, request, slug):
-        # Look up purchase.
-        try:
-            purchase_id = request.session['cartridge_downloads'][slug]
-        except KeyError:
-            logger.warning(
-                'Cookie not found or slug not found in session.',
-                exc_info=True)
-            raise PermissionDenied
+        # Look up acquisition.
+        download = Download.objects.get(slug=slug)
+        for acquisition in Acquisition.objects.filter(
+                transaction=request.transaction).select_subclasses():
+            if download in acquisition.page.downloads.all():
+                break
+        else:
+            raise Acquisition.DoesNotExist
 
-        acquisition = Acquisition.objects.get_subclass(id=purchase_id)
-
+        # Do nothing if the download limit has been reached.
         if acquisition.download_count >= acquisition.download_limit:
-            # Do nothing if the download limit has been reached.
             messages.add_message(
                 request,
                 messages.ERROR,
                 'Download Limit Exceeded. Please contact us for assistance.')
             return redirect(request.META.get('HTTP_REFERER', '/'))
+
+        # Otherwise proceed with download.
         else:
-            # Proceed with download.
             acquisition.download_count = F('download_count') + 1
             acquisition.save()
 
             return super(CartridgeDownloadView, self).get(self, request)
 
-download = CartridgeDownloadView.as_view(model=Download)
+download = _authenticate(CartridgeDownloadView.as_view(model=Download))

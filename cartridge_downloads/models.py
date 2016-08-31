@@ -1,5 +1,9 @@
+import uuid
+
+from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.crypto import get_random_string
 
 from mezzanine.conf import settings
 from mezzanine.core.fields import FileField
@@ -46,12 +50,36 @@ class Download(models.Model):
         super(Download, self).validate_unique(*args, **kwargs)
 
 
+class Transaction(models.Model):
+    # Use a uuid because these get exposed to users and we don't necessarily
+    # want to reveal the transaction count to them.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    token_hash = models.CharField(max_length=128)
+
+    def make_credentials(self):
+        return {'id': self.id, 'token': self.make_token()}
+
+    def make_token(self):
+        token = get_random_string()
+
+        # We don't need a real salt because the attacks salts protect against
+        # aren't applicable to random "passwords".
+        self.token_hash = make_password(token, salt='fake_salt')
+
+        return token
+
+    def check_token(self, token):
+        return check_password(token, self.token_hash)
+
+
 class Acquisition(models.Model):
     download_count = models.IntegerField(default=0,
                                          editable=False,
                                          verbose_name='Download Count')
     download_limit = models.IntegerField(default=5,
                                          verbose_name='Download Limit')
+    transaction = models.ForeignKey(Transaction, on_delete=models.PROTECT)
 
     objects = InheritanceManager()
 

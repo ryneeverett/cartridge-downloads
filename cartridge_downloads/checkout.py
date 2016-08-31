@@ -3,8 +3,8 @@ from cartridge.shop.checkout import default_billship_handler
 from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
-from .models import Purchase
-from .utils import session_downloads
+from .models import Purchase, Transaction
+from .utils import credential
 
 
 def billship_handler(request, order_form):
@@ -21,21 +21,24 @@ def order_handler(request, form, order):
     skus = request.cart.skus()
     variations = ProductVariation.objects.filter(sku__in=skus)
 
-    # Create purchase instances and store primary key in the session.
     download_products = (
         Product.objects
         .filter(variations__in=variations)
         .exclude(downloads=None))
 
-    with session_downloads(request) as customer_acquisitions:
+    if download_products.exists():
+        # Initialize transaction and credentials.
+        transaction = Transaction.objects.create()
+        credential(request, transaction.make_credentials())
+        transaction.save()
+
+        # Associate download products with transaction.
         for product in download_products:
-            purchase = Purchase(order=order, product=product)
+            purchase = Purchase(
+                transaction=transaction, order=order, product=product)
             purchase.save()
 
-            for download in product.downloads.all():
-                customer_acquisitions[download.slug] = purchase.id
-
-    # If order is all digital, mark it as processed.
+    # If order is all downloads, mark it as processed.
     if (request.cart.is_download_only and
             settings.SHOP_ORDER_STATUS_CHOICES[1] == (2, 'Processed')):
         order.status = 2

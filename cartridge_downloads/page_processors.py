@@ -5,8 +5,8 @@ from mezzanine.forms.forms import FormForForm
 from mezzanine.forms.page_processors import form_processor
 from mezzanine.forms.models import FormEntry
 
-from .models import Promotion
-from .utils import session_downloads
+from .models import Promotion, Transaction
+from .utils import credential
 
 
 def override_mezzanine_form_processor(request, page):
@@ -17,6 +17,12 @@ def override_mezzanine_form_processor(request, page):
         downloads = page.form.downloads
 
         if form.is_valid() and downloads.exists():
+            # Initialize transaction and credentials.
+            transaction = Transaction.objects.create()
+            credential(request, transaction.make_credentials())
+            transaction.save()
+
+            # Call mezzanine's form_processor.
             form_processor(request, page)
 
             # HACK: Depends on the form entry created in form_processor having
@@ -27,11 +33,8 @@ def override_mezzanine_form_processor(request, page):
                 .order_by('entry_time')
                 .last())
 
-            promotion = Promotion(formentry=formentry)
+            # Associate promotion with transaction.
+            promotion = Promotion(transaction=transaction, formentry=formentry)
             promotion.save()
-
-            with session_downloads(request) as customer_acquisitions:
-                for download in downloads.all():
-                    customer_acquisitions[download.slug] = promotion.id
 
             return redirect('downloads_index')

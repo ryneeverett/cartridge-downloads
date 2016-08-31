@@ -13,21 +13,28 @@ from django.contrib.messages import get_messages
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import PermissionDenied
+from django.core import mail
 from django.forms import HiddenInput, NumberInput
 
-from mezzanine.forms.models import Form
+from mezzanine.forms.models import Field, Form
+from mezzanine.pages.middleware import PageMiddleware
+from mezzanine.pages.views import page as mezzanine_page_view
+from cartridge.shop.checkout import CHECKOUT_STEP_LAST
 from cartridge.shop.models import (
     Cart, Order, OrderItem, Product, ProductOption, ProductVariation)
+from cartridge.shop.views import checkout_steps
 
 from django_downloadview.test import temporary_media_root
 
 from cartridge_downloads.admin import DownloadAdmin
 from cartridge_downloads.page_processors import (
     override_mezzanine_form_processor)
-from cartridge_downloads.models import Download, Purchase
+from cartridge_downloads.models import (
+    Acquisition, Download, Purchase, Transaction)
 from cartridge_downloads.checkout import order_handler
 from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
+from cartridge_downloads.utils import credential, session_downloads
 
 
 class DownloadModelTests(test.TestCase):
@@ -67,6 +74,25 @@ class DownloadModelTests(test.TestCase):
         self.assertEqual(
             form_instance.errors,
             {'__all__': ['A download with that file name already exists.']})
+
+
+class TransactionModelTests(test.TestCase):
+    def test_make_credentials(self):
+        transaction = Transaction.objects.create()
+        credentials = transaction.make_credentials()
+        transaction.save()
+
+        lookup_transaction = Transaction.objects.get(id=credentials['id'])
+
+        self.assertEqual(transaction, lookup_transaction)
+        self.assertTrue(lookup_transaction.check_token(credentials['token']))
+
+    def test_token(self):
+        transaction = Transaction.objects.create()
+        token = transaction.make_token()
+
+        self.assertTrue(transaction.check_token(token))
+        self.assertFalse(transaction.check_token('not-the-token'))
 
 
 class OrderHandlerTests(test.TestCase):
@@ -113,8 +139,6 @@ class OrderHandlerTests(test.TestCase):
 
         order_handler(self.request, mock.Mock(), self.order)
 
-        self.assertIn(self.download.slug,
-                      self.request.session['cartridge_downloads'])
         self.assertTrue(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 2)
 
@@ -125,8 +149,6 @@ class OrderHandlerTests(test.TestCase):
         self.request.cart.is_download_only = False
         order_handler(self.request, mock.Mock(), self.order)
 
-        self.assertIn(self.download.slug,
-                      self.request.session['cartridge_downloads'])
         self.assertTrue(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 1)
 
@@ -138,14 +160,88 @@ class OrderHandlerTests(test.TestCase):
 
         order_handler(self.request, mock.Mock(), self.order)
 
-        self.assertEqual(self.request.session['cartridge_downloads'], {})
+        self.assertNotIn('cartridge_downloads', self.request.session)
         self.assertFalse(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 1)
 
 
+class TestConfirmationEmail(test.TestCase):
+    def test_cartridge_order(self):
+        request = test.RequestFactory().post(
+            '/', data={'step': CHECKOUT_STEP_LAST})
+        request.user = User.objects.get_or_create(pk=1)[0]
+
+        product = Product.objects.create()
+        product.save()
+
+        SessionMiddleware().process_request(request)
+
+        def setup_cart():
+            request.cart = Cart.objects.create()
+            request.cart.add_item(
+                ProductVariation.objects.create(product=product), 1)
+            request.cart.is_download_only = False
+
+            request.session['cart'] = request.cart.pk
+            request.session.save()
+
+        setup_cart()
+
+        self.assertEqual(len(mail.outbox), 0)
+
+        checkout_steps(request)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn('access your downloads', mail.outbox[0].body)
+
+        download = Download.objects.create()
+        download.products.add(product)
+        download.save()
+
+        setup_cart()
+
+        checkout_steps(request)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('access your downloads', mail.outbox[1].body)
+
+    def test_mezzanine_form(self):
+        page = Form.objects.create(slug='my-form')
+        page.save()
+
+        field = Field.objects.create(
+            form=page,
+            field_type=3,
+            required=False)
+        field.save()
+
+        page_middleware = PageMiddleware()
+
+        request = test.RequestFactory().post(
+            '/my-form', data={'field_1': 'somebody@example.com'})
+        request.user = User.objects.get_or_create(pk=1)[0]
+
+        SessionMiddleware().process_request(request)
+        request.session.save()
+
+        self.assertEqual(len(mail.outbox), 0,)
+
+        page_middleware.process_view(request, mezzanine_page_view, {}, {})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn('access your downloads', mail.outbox[0].body)
+
+        download = Download.objects.create()
+        download.forms.add(page)
+        download.save()
+
+        page_middleware.process_view(request, mezzanine_page_view, {}, {})
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('access your downloads', mail.outbox[1].body)
+
+
 class OverrideMezzanineFormProcessorTests(test.TestCase):
     def setUp(self):
+        # Must post some data or the form will not be bound.
         self.request = test.RequestFactory().post('/', data={'not': 'None'})
+
         SessionMiddleware().process_request(self.request)
         self.request.session.save()
 
@@ -160,9 +256,6 @@ class OverrideMezzanineFormProcessorTests(test.TestCase):
         response = override_mezzanine_form_processor(self.request, self.page)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/downloads/')
-
-        self.assertIn(download.slug,
-                      self.request.session['cartridge_downloads'])
 
     def test_no_downloads(self):
         response = override_mezzanine_form_processor(self.request, self.page)
@@ -252,12 +345,13 @@ class DownloadViewTests(test.TestCase):
         order = Order.objects.create()
         order.save()
 
-        self.purchase = Purchase.objects.create(
-            product=self.product, order=order)
-        self.purchase.save()
+        transaction = Transaction.objects.create()
+        credential(self.request, transaction.make_credentials())
+        transaction.save()
 
-        self.request.session['cartridge_downloads'] = {
-            self.download.slug: self.purchase.id}
+        self.purchase = Purchase.objects.create(
+            transaction=transaction, product=self.product, order=order)
+        self.purchase.save()
 
     @temporary_media_root()
     def test_download(self):
@@ -272,6 +366,20 @@ class DownloadViewTests(test.TestCase):
     def test_cookie_not_found(self):
         self._set_up()
 
+        with session_downloads(self.request) as session:
+            del session['id']
+            del session['token']
+
+        with self.assertRaises(PermissionDenied):
+            views.download(self.request, slug=self.download.slug)
+
+    @temporary_media_root()
+    def test_acquisition_does_not_exist_unauthorized(self):
+        """
+        The file may exist, but the user is not authorized to access it.
+        """
+        self._set_up()
+
         different_file = os.path.join(settings.MEDIA_ROOT, 'different.txt')
         shutil.copy(
             os.path.join(settings.MEDIA_ROOT, self.basename), different_file)
@@ -279,7 +387,7 @@ class DownloadViewTests(test.TestCase):
         different_download = Download.objects.create(file=different_file)
         different_download.save()
 
-        with self.assertRaises(PermissionDenied):
+        with self.assertRaises(Acquisition.DoesNotExist):
             views.download(self.request, slug=different_download.slug)
 
     @temporary_media_root()

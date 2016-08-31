@@ -12,7 +12,7 @@ filebrowser-safe==0.4.4
 future==0.15.2
 grappelli-safe==0.4.3
 html5lib==0.9999999
-Mezzanine==4.2.0
+-e git+https://github.com/stephenmcd/mezzanine.git@9f93b1ffadcedeb47b6ea0160a9fb1f622e98b8c#egg=Mezzanine-origin_template-loaders-remove-deprecated-settings
 oauthlib==1.1.2
 Pillow==3.3.0
 pluggy==0.3.1
