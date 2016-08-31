@@ -191,6 +191,7 @@ class TestOrderConfirmationEmail(test.TestCase):
 
         checkout_steps(request)
         self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Your order has been successful', mail.outbox[0].body)
         self.assertNotIn('access your downloads', mail.outbox[0].body)
 
         download = Download.objects.create()
@@ -201,6 +202,7 @@ class TestOrderConfirmationEmail(test.TestCase):
 
         checkout_steps(request)
         self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('Your order has been successful', mail.outbox[0].body)
         self.assertIn('access your downloads', mail.outbox[1].body)
 
 

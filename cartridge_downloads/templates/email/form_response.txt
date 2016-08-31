@@ -1,4 +1,4 @@
-{% overextends "email/base.txt" %}
+{% overextends "email/form_response.txt" %}
 
 {% block main %}{{ block.super }}
 
