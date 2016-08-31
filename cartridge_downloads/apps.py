@@ -1,4 +1,8 @@
+import logging
+
 from django.apps import AppConfig
+
+from mezzanine.conf import settings
 
 
 class DownloadsConfig(AppConfig):
@@ -16,3 +20,9 @@ class DownloadsConfig(AppConfig):
         from mezzanine.pages.page_processors import processor_for
         from .page_processors import override_mezzanine_form_processor
         processor_for(Form)(override_mezzanine_form_processor)
+
+        if not settings.SESSION_COOKIE_SECURE:
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                'SESSION_COOKIE_SECURE is not set! Cartridge-Downloads stores '
+                'client credentials in session cookies.')
