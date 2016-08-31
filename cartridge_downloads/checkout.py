@@ -32,11 +32,15 @@ def order_handler(request, form, order):
         credential(request, transaction.make_credentials())
         transaction.save()
 
-        # Associate download products with transaction.
+        # Associate downloads with transaction.
         for product in download_products:
-            purchase = Purchase(
-                transaction=transaction, order=order, product=product)
-            purchase.save()
+            for download in product.downloads.all():
+                purchase = Purchase(
+                    download=download,
+                    transaction=transaction,
+                    order=order,
+                    product=product)
+                purchase.save()
 
     # If order is all downloads, mark it as processed.
     if (request.cart.is_download_only and

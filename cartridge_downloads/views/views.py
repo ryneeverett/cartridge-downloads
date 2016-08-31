@@ -57,13 +57,8 @@ def index(request):
 class CartridgeDownloadView(ObjectDownloadView):
     def get(self, request, slug):
         # Look up acquisition.
-        download = Download.objects.get(slug=slug)
-        for acquisition in Acquisition.objects.filter(
-                transaction=request.transaction).select_subclasses():
-            if download in acquisition.page.downloads.all():
-                break
-        else:
-            raise Acquisition.DoesNotExist
+        acquisition = Acquisition.objects.get(
+            download__slug=slug, transaction=request.transaction)
 
         # Do nothing if the download limit has been reached.
         if acquisition.download_count >= acquisition.download_limit:

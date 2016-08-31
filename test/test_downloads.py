@@ -165,7 +165,7 @@ class OrderHandlerTests(test.TestCase):
         self.assertEqual(self.order.status, 1)
 
 
-class TestConfirmationEmail(test.TestCase):
+class TestOrderConfirmationEmail(test.TestCase):
     def test_cartridge_order(self):
         request = test.RequestFactory().post(
             '/', data={'step': CHECKOUT_STEP_LAST})
@@ -203,6 +203,9 @@ class TestConfirmationEmail(test.TestCase):
         self.assertEqual(len(mail.outbox), 2)
         self.assertIn('access your downloads', mail.outbox[1].body)
 
+
+class TestFormConfirmationEmail(test.TestCase):
+    """ HACK Separate classes avoids segmentation fault. """
     def test_mezzanine_form(self):
         page = Form.objects.create(slug='my-form')
         page.save()
@@ -350,7 +353,10 @@ class DownloadViewTests(test.TestCase):
         transaction.save()
 
         self.purchase = Purchase.objects.create(
-            transaction=transaction, product=self.product, order=order)
+            download=self.download,
+            transaction=transaction,
+            product=self.product,
+            order=order)
         self.purchase.save()
 
     @temporary_media_root()

@@ -33,8 +33,12 @@ def override_mezzanine_form_processor(request, page):
                 .order_by('entry_time')
                 .last())
 
-            # Associate promotion with transaction.
-            promotion = Promotion(transaction=transaction, formentry=formentry)
-            promotion.save()
+            # Associate downloads with transaction.
+            for download in downloads.all():
+                promotion = Promotion(
+                    download=download,
+                    transaction=transaction,
+                    formentry=formentry)
+                promotion.save()
 
             return redirect('downloads_index')

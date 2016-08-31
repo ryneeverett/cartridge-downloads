@@ -36,8 +36,9 @@ class FormDownloadInline(admin.TabularInline):
 class PurchaseInline(admin.TabularInline):
     model = Purchase
     verbose_name_plural = 'Download Purchases'
-    readonly_fields = ('product_link', 'download_count')
-    fields = ('product_link', 'download_count', 'download_limit')
+    readonly_fields = ('product_link', 'download', 'download_count')
+    fields = (
+        'product_link', 'download', 'download_count', 'download_limit')
     extra = 0
 
     def product_link(self, obj):
