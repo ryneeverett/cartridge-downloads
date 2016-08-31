@@ -74,13 +74,14 @@ class Transaction(models.Model):
 
 
 class Acquisition(models.Model):
-    download = models.ForeignKey('Download', on_delete=models.PROTECT)
+    download = models.ForeignKey('Download', on_delete=models.PROTECT, null=True)
     download_count = models.IntegerField(default=0,
                                          editable=False,
                                          verbose_name='Download Count')
     download_limit = models.IntegerField(default=5,
                                          verbose_name='Download Limit')
-    transaction = models.ForeignKey(Transaction, on_delete=models.PROTECT)
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.PROTECT, null=True)
 
     objects = InheritanceManager()
 
