@@ -1,8 +1,18 @@
-{% overextends "email/form_response.txt" %}
+{% extends "email/base.txt" %}
 
-{% block main %}{{ block.super }}
+{% block main %}
+{% if message %}<p>{{ message }}</p>{% endif %}
 
 {% if request.download_url %}
 You can access your downloads at this link: {{ request.download_url }}.
 {% endif %}
+
+<table border="0">
+{% for field, value in fields %}
+<tr>
+    <td><b>{{ field }}:</b></td>
+    <td>{{ value|linebreaks }}</td>
+</tr>
+{% endfor %}
+</table>
 {% endblock %}
