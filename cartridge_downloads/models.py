@@ -74,7 +74,8 @@ class Transaction(models.Model):
 
 
 class Acquisition(models.Model):
-    download = models.ForeignKey('Download', on_delete=models.PROTECT, null=True)
+    download = models.ForeignKey(
+        'Download', on_delete=models.PROTECT, null=True)
     download_count = models.IntegerField(default=0,
                                          editable=False,
                                          verbose_name='Download Count')

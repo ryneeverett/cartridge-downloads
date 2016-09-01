@@ -44,10 +44,10 @@ def _authenticate(func):
 
 @_authenticate
 def index(request):
-    acquisition_pages = [
+    acquisition_pages = set([
         acq.page for acq in
         Acquisition.objects.filter(
-            transaction=request.transaction).select_subclasses()]
+            transaction=request.transaction).select_subclasses()])
 
     return render(request,
                   'shop/downloads/index.html',

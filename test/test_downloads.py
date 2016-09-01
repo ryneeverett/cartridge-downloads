@@ -24,6 +24,7 @@ from cartridge.shop.models import (
     Cart, Order, OrderItem, Product, ProductOption, ProductVariation)
 from cartridge.shop.views import checkout_steps
 
+from bs4 import BeautifulSoup
 from django_downloadview.test import temporary_media_root
 
 from cartridge_downloads.admin import DownloadAdmin
@@ -336,16 +337,21 @@ class DownloadViewTests(test.TestCase):
 
         super(DownloadViewTests, cls).setUpClass()
 
-    def _set_up(self):
-        """ Run this from within test method to use temporary media root. """
-        self.basename = 'download_file.txt'
-        temp_file = os.path.join(settings.MEDIA_ROOT, self.basename)
+    def _set_up_download_file(self, basename):
+        temp_file = os.path.join(settings.MEDIA_ROOT, basename)
         with open(temp_file, 'a'):
             os.utime(temp_file, None)
 
-        self.download = Download.objects.create(file=temp_file)
-        self.download.products.add(self.product)
-        self.download.save()
+        download = Download.objects.create(file=temp_file)
+        download.products.add(self.product)
+        download.save()
+
+        return download
+
+    def _set_up(self):
+        """ Run this from within test method to use temporary media root. """
+        self.basename = 'download_file.txt'
+        self.download = self._set_up_download_file(self.basename)
 
         order = Order.objects.create()
         order.save()
@@ -360,6 +366,26 @@ class DownloadViewTests(test.TestCase):
             product=self.product,
             order=order)
         self.purchase.save()
+
+        another_download = self._set_up_download_file('another_file.txt')
+        another_purchase = Purchase.objects.create(
+            download=another_download,
+            transaction=transaction,
+            product=self.product,
+            order=order)
+        another_purchase.save()
+
+    @temporary_media_root()
+    def test_index(self):
+        self._set_up()
+        self.request.user = User.objects.get_or_create(pk=1)[0]
+
+        response = views.index(self.request)
+        self.assertEqual(response.status_code, 200)
+
+        soup = BeautifulSoup(response.content, 'html5lib')
+        self.assertEqual(
+            len(soup.find_all('a', href='/downloads/download_file.txt')), 1)
 
     @temporary_media_root()
     def test_download(self):
