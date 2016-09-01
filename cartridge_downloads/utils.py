@@ -4,6 +4,7 @@ try:
 except ImportError:  # python2
     from urllib import urlencode
 
+from mezzanine.conf import settings
 try:
     from django.urls import reverse
 except ImportError:  # django<1.10
@@ -25,7 +26,7 @@ def credential(request, credentials):
     # Pass credentials in url parameters for email template context.
     from .views.views import index
     request.download_url = '{scheme}://{host}{url}?{querystring}'.format(
-        scheme=request.scheme,
+        scheme='https' if not settings.DEBUG else request.scheme,
         host=request.get_host(),
         url=reverse(index),
         querystring=urlencode(credentials))
