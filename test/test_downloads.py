@@ -375,6 +375,18 @@ class DownloadViewTests(test.TestCase):
             order=order)
         another_purchase.save()
 
+    def test_authenticate(self):
+        credentials = Transaction.objects.create().make_credentials()
+        response = views.authenticate(
+            self.request, credentials['id'], credentials['token'])
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/downloads/')
+
+        with session_downloads(self.request) as session:
+            self.assertEqual(session['id'], credentials['id'])
+            self.assertEqual(session['token'], credentials['token'])
+
     @temporary_media_root()
     def test_index(self):
         self._set_up()

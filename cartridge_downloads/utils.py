@@ -1,8 +1,4 @@
 import contextlib
-try:
-    from urllib.parse import urlencode
-except ImportError:  # python2
-    from urllib import urlencode
 
 from mezzanine.conf import settings
 try:
@@ -24,9 +20,7 @@ def credential(request, credentials):
         session.update(credentials)
 
     # Pass credentials in url parameters for email template context.
-    from .views.views import index
-    request.download_url = '{scheme}://{host}{url}?{querystring}'.format(
+    request.download_url = '{scheme}://{host}{url}'.format(
         scheme='https' if not settings.DEBUG else request.scheme,
         host=request.get_host(),
-        url=reverse(index),
-        querystring=urlencode(credentials))
+        url=reverse('downloads_authenticate', kwargs=credentials))

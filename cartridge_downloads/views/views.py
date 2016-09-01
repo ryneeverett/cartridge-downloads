@@ -15,18 +15,20 @@ from ..utils import session_downloads
 logger = logging.getLogger('django.request')
 
 
+def authenticate(request, id, token):
+    with session_downloads(request) as session:
+        session['id'] = id
+        session['token'] = token
+
+    return redirect(index)
+
+
 def _authenticate(func):
     """ View decorator that validates credentials and injects transaction. """
     @functools.wraps(func)
     def wrapper(request, *args, **kwargs):
-        id_param = request.GET.get('id')
-        token_param = request.GET.get('token')
-
         try:
             with session_downloads(request) as session:
-                if id_param and token_param:
-                    session['id'] = id_param
-                    session['token'] = token_param
                 _id = session['id']
                 token = session['token']
         except KeyError:
