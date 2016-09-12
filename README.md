@@ -1,5 +1,7 @@
 Digital product support for the [Django](https://github.com/django/django)/[Mezzanine](https://github.com/stephenmcd/mezzanine)/[Cartridge](https://github.com/stephenmcd/cartridge) stack, with support for large files with [django_downloadview](https://github.com/benoitbryon/django-downloadview).
 
+[![Build Status](https://travis-ci.org/ryneeverett/cartridge-downloads.svg?branch=master)](https://travis-ci.org/ryneeverett/cartridge-downloads)
+
 # Features
 
 - Adds download fields to the `Product` admin.
