@@ -134,7 +134,8 @@ class OrderHandlerTests(test.TestCase):
         """
         All products are digital and all variations are download_only.
         """
-        self.request.cart.is_download_only = True
+        with session_downloads(self.request) as session:
+            session['is_download_only'] = True
         self.variation.option1 = 'Download Only'
         self.variation.save()
 
@@ -147,7 +148,8 @@ class OrderHandlerTests(test.TestCase):
         """
         All products are digital, but the variations aren't all download_only.
         """
-        self.request.cart.is_download_only = False
+        with session_downloads(self.request) as session:
+            session['is_download_only'] = False
         order_handler(self.request, mock.Mock(), self.order)
 
         self.assertTrue(self.product_is_download_purchase)
@@ -155,13 +157,15 @@ class OrderHandlerTests(test.TestCase):
 
     def test_not_digital(self):
         """ Non-digital products. """
-        self.request.cart.is_download_only = False
+        with session_downloads(self.request) as session:
+            session['is_download_only'] = False
         self.product.downloads.clear()
         self.product.save()
 
         order_handler(self.request, mock.Mock(), self.order)
 
-        self.assertNotIn('cartridge_downloads', self.request.session)
+        self.assertNotIn('id', self.request.session['cartridge_downloads'])
+        self.assertNotIn('token', self.request.session['cartridge_downloads'])
         self.assertFalse(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 1)
 
@@ -181,7 +185,8 @@ class TestOrderConfirmationEmail(test.TestCase):
             request.cart = Cart.objects.create()
             request.cart.add_item(
                 ProductVariation.objects.create(product=product), 1)
-            request.cart.is_download_only = False
+            with session_downloads(request) as session:
+                session['is_download_only'] = False
 
             request.session['cart'] = request.cart.pk
             request.session.save()
@@ -467,6 +472,8 @@ class OverrideViewTests(test.TestCase):
 
     def setUp(self):
         self.request = test.RequestFactory().get('/')
+        SessionMiddleware().process_request(self.request)
+        self.request.session.save()
 
     def test_cartridge_product(self):
         self.request.user = User.objects.get_or_create(pk=1)[0]

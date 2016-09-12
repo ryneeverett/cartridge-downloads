@@ -10,6 +10,8 @@ from cartridge.shop import views as cartridge_views
 from cartridge.shop.forms import AddProductForm, CartItemFormSet
 from cartridge.shop.models import Product, ProductVariation
 
+from ..utils import session_downloads
+
 
 DOWNLOAD_ONLY_OPTION = False
 for option_value, option_name in settings.SHOP_OPTION_TYPE_CHOICES:
@@ -55,8 +57,9 @@ def cart(request, slug, **kwargs):
             i for i, b in enumerate(products_are_downloads) if b]
 
         # Cache is_download_only.
-        request.cart.is_download_only = bool(
-            len(skus) == len(products_are_downloads))
+        with session_downloads(request) as session:
+            session['is_download_only'] = bool(
+                len(skus) == len(products_are_downloads))
 
         for i in download_product_indexes:
             # Set quantity to 1.

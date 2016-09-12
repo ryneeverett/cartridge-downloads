@@ -11,7 +11,7 @@ def billship_handler(request, order_form):
     """
     If product is all downloads, do not set shipping (defaults to free).
     """
-    if request.cart.is_download_only:
+    if request.session['cartridge_downloads']['is_download_only']:
         set_shipping(request, "Free shipping", 0)
     else:
         default_billship_handler(request, order_form)
@@ -43,7 +43,7 @@ def order_handler(request, form, order):
                 purchase.save()
 
     # If order is all downloads, mark it as processed.
-    if (request.cart.is_download_only and
+    if (request.session['cartridge_downloads']['is_download_only'] and
             settings.SHOP_ORDER_STATUS_CHOICES[1] == (2, 'Processed')):
         order.status = 2
         order.save()
