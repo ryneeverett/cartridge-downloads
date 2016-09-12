@@ -37,6 +37,7 @@ from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
 from cartridge_downloads.utils import credential, session_downloads
 
+import testbase
 
 class DownloadModelTests(test.TestCase):
     @classmethod
@@ -96,9 +97,7 @@ class TransactionModelTests(test.TestCase):
         self.assertFalse(transaction.check_token('not-the-token'))
 
 
-class OrderHandlerTests(test.TestCase):
-    variation_sku = 0
-
+class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
     @classmethod
     def setUpClass(cls):
         option = ProductOption.objects.create(type=1, name='Download Only')
@@ -116,7 +115,6 @@ class OrderHandlerTests(test.TestCase):
 
         self.variation = ProductVariation.objects.create(
             sku=self.variation_sku, product=self.product)
-        self.variation_sku += 1
 
         OrderItem.objects.create(order=self.order, sku=self.variation.sku)
 
@@ -516,8 +514,6 @@ class OverrideViewTests(test.TestCase):
         download = Download.objects.get_or_create(slug='somefile.txt')[0]
 
         self.request.user = User.objects.get_or_create(pk=1)[0]
-        SessionMiddleware().process_request(self.request)
-        self.request.session.save()
         setattr(self.request, '_messages', FallbackStorage(self.request))
         self.request.GET = self.request.GET.copy()
         self.request.GET['filename'] = download.slug

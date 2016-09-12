@@ -120,6 +120,19 @@ pip install mock
 python test
 ```
 
+Running the Tests
+-----------------
+
+- To run browser tests, install python dependencies with `pip install -r dev-requirements.txt`.
+- To run browser tests headless, [install phantomjs](http://phantomjs.org/download.html) on your system. A `ghostdriver.log` file is created (and deleted after every TestCase) which may be useful for debugging these, though running them again with firefox is generally easier.
+
+```sh
+python test [--debug] [<webdriver>]
+```
+
+- *--debug* Write verbose output to ghostdriver.log.
+- *\<webdriver\>* [phantomjs|firefox|chrome] If ommitted the browser tests will default to phantomjs and fall back to firefox if unavailable.
+
 ## Running Tests In Multiple Environments
 
 ```console

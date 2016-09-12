@@ -12,7 +12,8 @@ if __name__ == '__main__':
     os.environ['DJANGO_SETTINGS_MODULE'] = 'resources.settings'
     django.setup()
     test_runner = get_runner(settings)()
-    is_failure = bool(test_runner.run_tests(['test_downloads']))
+    is_failure = bool(test_runner.run_tests([
+        'test_browser', 'test_downloads']))
 
     if not is_failure:
         with open('requirements.txt', 'w') as reqs:
