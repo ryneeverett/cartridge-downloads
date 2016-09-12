@@ -134,10 +134,3 @@ python test [--debug] [<webdriver>]
 
 - *--debug* Write verbose output to ghostdriver.log.
 - *\<webdriver\>* [phantomjs|firefox|chrome] If ommitted the browser tests will default to phantomjs and fall back to firefox if unavailable.
-
-## Running Tests In Multiple Environments
-
-```console
-pip install tox
-tox
-```
