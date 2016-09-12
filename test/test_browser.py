@@ -34,7 +34,7 @@ class TestBrowser(StaticLiveServerTestCase, testbase.DownloadTestMixin):
         except splinter.exceptions.DriverNotFoundError:
             cls.browser = splinter.Browser('firefox')
 
-        super().setUpClass()
+        super(TestBrowser, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
