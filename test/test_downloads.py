@@ -482,7 +482,7 @@ class OverrideViewTests(test.TestCase):
         self.assertIsInstance(product_form.base_fields['quantity'].widget,
                               HiddenInput)
 
-    def test_cartridge_cart(self):
+    def test_cartridge_cart_not_download_only(self):
         self.request.cart = Cart.objects.create()
 
         conventional_product_variation = ProductVariation.objects.create(
@@ -503,11 +503,34 @@ class OverrideViewTests(test.TestCase):
         conventional_form = cart_formset[0]
         digital_form = cart_formset[1]
 
+        self.assertFalse(
+            self.request.session['cartridge_downloads']['is_download_only'])
         self.assertIsInstance(conventional_form.fields['quantity'].widget,
                               NumberInput)
         self.assertIsInstance(digital_form.fields['quantity'].widget,
                               HiddenInput)
         self.assertEqual(conventional_form.instance.quantity, 5)
+        self.assertEqual(digital_form.instance.quantity, 1)
+
+    def test_cartridge_cart_is_download_only(self):
+        self.request.cart = Cart.objects.create()
+
+        digital_product_variation = ProductVariation.objects.create(
+            product=self.product, sku=4)
+        digital_product_variation.option1 = 'Download Only'
+        digital_product_variation.save()
+
+        self.request.cart.add_item(digital_product_variation, 5)
+
+        response = override_cartridge.cart(self.request, 'cart')
+        cart_formset = response.context_data['cart_formset']
+
+        digital_form = cart_formset[0]
+
+        self.assertTrue(
+            self.request.session['cartridge_downloads']['is_download_only'])
+        self.assertIsInstance(digital_form.fields['quantity'].widget,
+                              HiddenInput)
         self.assertEqual(digital_form.instance.quantity, 1)
 
     def test_filebrowser_delete(self):

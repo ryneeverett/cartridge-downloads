@@ -49,19 +49,19 @@ def cart(request, slug, **kwargs):
 
         # Figure out the indexes of the "download only" products.
         skus = [form.instance.sku for form in cart_formset]
-        products_are_downloads = (
+        products_are_download_only = (
             [ProductVariation.objects.filter(
                 sku__in=[sku], **DOWNLOAD_ONLY_OPTION).exists()
              for sku in skus] if DOWNLOAD_ONLY_OPTION else [])
-        download_product_indexes = [
-            i for i, b in enumerate(products_are_downloads) if b]
+        download_only_product_indexes = [
+            i for i, b in enumerate(products_are_download_only) if b]
 
         # Cache is_download_only.
         with session_downloads(request) as session:
             session['is_download_only'] = bool(
-                len(skus) == len(products_are_downloads))
+                len(skus) == len(download_only_product_indexes))
 
-        for i in download_product_indexes:
+        for i in download_only_product_indexes:
             # Set quantity to 1.
             cart_formset[i].instance.quantity = 1
             cart_formset[i].instance.save()
