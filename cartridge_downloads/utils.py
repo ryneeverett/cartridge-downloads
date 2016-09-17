@@ -9,7 +9,7 @@ except ImportError:  # django<1.10
 
 @contextlib.contextmanager
 def session_downloads(request):
-    # Schema: {'id': <id>, 'token': <token>, 'is_download_only': <bool>}
+    # Schema: {'id': <id>, 'token': <token>}
     yield request.session.setdefault('cartridge_downloads', {})
 
     request.session.modified = True

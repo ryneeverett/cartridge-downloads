@@ -4,7 +4,7 @@ from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
 from .models import Purchase, Transaction
-from .utils import credential, session_downloads
+from .utils import credential
 
 
 DOWNLOAD_ONLY_OPTION = False
@@ -17,21 +17,20 @@ def billship_handler(request, order_form):
     """
     If product is all downloads, do not set shipping (defaults to free).
     """
-    with session_downloads(request) as session:
-        session['is_download_only'] = (
-            not ProductVariation.objects
-                .filter(sku__in=request.cart.skus())
-                .exclude(**DOWNLOAD_ONLY_OPTION)
-                .exists()
-            if DOWNLOAD_ONLY_OPTION else False)
+    request.is_download_only  = (
+        not ProductVariation.objects
+            .filter(sku__in=request.cart.skus())
+            .exclude(**DOWNLOAD_ONLY_OPTION)
+            .exists()
+        if DOWNLOAD_ONLY_OPTION else False)
 
-    if session['is_download_only']:
+    if request.is_download_only:
         set_shipping(request, "Free shipping", 0)
     else:
         default_billship_handler(request, order_form)
 
 
-def order_handler(request, form, order):
+def order_handler(request, order_form, order):
     skus = request.cart.skus()
     variations = ProductVariation.objects.filter(sku__in=skus)
 
@@ -57,7 +56,7 @@ def order_handler(request, form, order):
                 purchase.save()
 
     # If order is all downloads, mark it as processed.
-    if (request.session['cartridge_downloads']['is_download_only'] and
+    if (request.is_download_only and
             settings.SHOP_ORDER_STATUS_CHOICES[1] == (2, 'Processed')):
         order.status = 2
         order.save()

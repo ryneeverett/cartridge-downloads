@@ -122,20 +122,20 @@ class BillshipHandlerTests(test.TestCase, testbase.DownloadTestMixin):
         super(BillshipHandlerTests, cls).setUpClass()
 
     def test_cartridge_cart_is_download_only(self):
-        billship_handler(self.request, None)
-        session = self.request.session
-        self.assertTrue(session['cartridge_downloads']['is_download_only'])
-        self.assertEqual(session['shipping_type'], 'Free shipping')
+        billship_handler(self.request, mock.Mock())
+        self.assertTrue(self.request.is_download_only)
+        self.assertEqual(
+            self.request.session['shipping_type'], 'Free shipping')
 
     def test_cartridge_cart_not_download_only(self):
         conventional_product_variation = ProductVariation.objects.create(
             sku=self.sku, product=self.product)
         self.request.cart.add_item(conventional_product_variation, 5)
 
-        billship_handler(self.request, None)
-        session = self.request.session
-        self.assertFalse(session['cartridge_downloads']['is_download_only'])
-        self.assertEqual(session['shipping_type'], 'Flat rate shipping')
+        billship_handler(self.request, mock.Mock())
+        self.assertFalse(self.request.is_download_only)
+        self.assertEqual(
+            self.request.session['shipping_type'], 'Flat rate shipping')
 
 
 class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
@@ -161,9 +161,9 @@ class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
 
         self.request = test.RequestFactory().get('/')
         SessionMiddleware().process_request(self.request)
+        self.request.session.save()
         self.request.cart = Cart.objects.create()
         self.request.cart.add_item(self.variation, 1)
-        self.request.session.save()
 
     @property
     def product_is_download_purchase(self):
@@ -173,10 +173,10 @@ class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
         """
         All products are digital and all variations are download_only.
         """
-        with session_downloads(self.request) as session:
-            session['is_download_only'] = True
         self.variation.option1 = 'Download Only'
         self.variation.save()
+
+        self.request.is_download_only = True
 
         order_handler(self.request, mock.Mock(), self.order)
 
@@ -187,8 +187,8 @@ class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
         """
         All products are digital, but the variations aren't all download_only.
         """
-        with session_downloads(self.request) as session:
-            session['is_download_only'] = False
+        self.request.is_download_only = False
+
         order_handler(self.request, mock.Mock(), self.order)
 
         self.assertTrue(self.product_is_download_purchase)
@@ -196,15 +196,13 @@ class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
 
     def test_not_digital(self):
         """ Non-digital products. """
-        with session_downloads(self.request) as session:
-            session['is_download_only'] = False
         self.product.downloads.clear()
         self.product.save()
 
+        self.request.is_download_only = False
+
         order_handler(self.request, mock.Mock(), self.order)
 
-        self.assertNotIn('id', self.request.session['cartridge_downloads'])
-        self.assertNotIn('token', self.request.session['cartridge_downloads'])
         self.assertFalse(self.product_is_download_purchase)
         self.assertEqual(self.order.status, 1)
 
@@ -224,8 +222,6 @@ class TestOrderConfirmationEmail(test.TestCase):
             request.cart = Cart.objects.create()
             request.cart.add_item(
                 ProductVariation.objects.create(product=product), 1)
-            with session_downloads(request) as session:
-                session['is_download_only'] = False
 
             request.session['cart'] = request.cart.pk
             request.session.save()
