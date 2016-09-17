@@ -19,6 +19,8 @@ except KeyError:
     WEBDRIVER = 'phantomjs'
 
 
+# from django.test.utils import override_settings
+# @override_settings(DEBUG=True)
 class TestBrowser(StaticLiveServerTestCase, testbase.DownloadTestMixin):
     @classmethod
     def setUpClass(cls):
@@ -53,7 +55,7 @@ class TestBrowser(StaticLiveServerTestCase, testbase.DownloadTestMixin):
         download.save()
 
         variation = ProductVariation.objects.create(
-            sku=self.variation_sku, product=product, unit_price=1.0)
+            sku=self.sku, product=product, unit_price=1.0)
         variation.save()
 
         self.visit_relativeurl(product.get_absolute_url())

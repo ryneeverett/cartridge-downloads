@@ -4,14 +4,28 @@ from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
 from .models import Purchase, Transaction
-from .utils import credential
+from .utils import credential, session_downloads
+
+
+DOWNLOAD_ONLY_OPTION = False
+for option_value, option_name in settings.SHOP_OPTION_TYPE_CHOICES:
+    if option_name == 'Downloads':
+        DOWNLOAD_ONLY_OPTION = {'option' + str(option_value): 'Download Only'}
 
 
 def billship_handler(request, order_form):
     """
     If product is all downloads, do not set shipping (defaults to free).
     """
-    if request.session['cartridge_downloads']['is_download_only']:
+    with session_downloads(request) as session:
+        session['is_download_only'] = (
+            not ProductVariation.objects
+                .filter(sku__in=request.cart.skus())
+                .exclude(**DOWNLOAD_ONLY_OPTION)
+                .exists()
+            if DOWNLOAD_ONLY_OPTION else False)
+
+    if session['is_download_only']:
         set_shipping(request, "Free shipping", 0)
     else:
         default_billship_handler(request, order_form)

@@ -4,19 +4,11 @@ import copy
 from django.forms import HiddenInput
 from django.shortcuts import get_object_or_404
 
-from mezzanine.conf import settings
-
 from cartridge.shop import views as cartridge_views
 from cartridge.shop.forms import AddProductForm, CartItemFormSet
 from cartridge.shop.models import Product, ProductVariation
 
-from ..utils import session_downloads
-
-
-DOWNLOAD_ONLY_OPTION = False
-for option_value, option_name in settings.SHOP_OPTION_TYPE_CHOICES:
-    if option_name == 'Downloads':
-        DOWNLOAD_ONLY_OPTION = {'option' + str(option_value): 'Download Only'}
+from ..checkout import DOWNLOAD_ONLY_OPTION
 
 
 def product(request, slug, **kwargs):
@@ -55,11 +47,6 @@ def cart(request, slug, **kwargs):
              for sku in skus] if DOWNLOAD_ONLY_OPTION else [])
         download_only_product_indexes = [
             i for i, b in enumerate(products_are_download_only) if b]
-
-        # Cache is_download_only.
-        with session_downloads(request) as session:
-            session['is_download_only'] = bool(
-                len(skus) == len(download_only_product_indexes))
 
         for i in download_only_product_indexes:
             # Set quantity to 1.

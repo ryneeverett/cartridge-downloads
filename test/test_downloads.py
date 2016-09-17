@@ -32,7 +32,7 @@ from cartridge_downloads.page_processors import (
     override_mezzanine_form_processor)
 from cartridge_downloads.models import (
     Acquisition, Download, Purchase, Transaction)
-from cartridge_downloads.checkout import order_handler
+from cartridge_downloads.checkout import order_handler, billship_handler
 from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
 from cartridge_downloads.utils import credential, session_downloads
@@ -97,6 +97,47 @@ class TransactionModelTests(test.TestCase):
         self.assertFalse(transaction.check_token('not-the-token'))
 
 
+class BillshipHandlerTests(test.TestCase, testbase.DownloadTestMixin):
+    def setUp(self):
+        self.request = test.RequestFactory().get('/')
+        self.request.cart = Cart.objects.create()
+        SessionMiddleware().process_request(self.request)
+        self.request.session.save()
+
+        digital_product_variation = ProductVariation.objects.create(
+            sku=self.sku, product=self.product)
+        digital_product_variation.option1 = 'Download Only'
+        digital_product_variation.save()
+
+        self.request.cart.add_item(digital_product_variation, 5)
+
+    @classmethod
+    def setUpClass(cls):
+        option = ProductOption.objects.create(type=1, name='Download Only')
+        option.save()
+
+        cls.product = Product.objects.create()
+        cls.product.save()
+
+        super(BillshipHandlerTests, cls).setUpClass()
+
+    def test_cartridge_cart_is_download_only(self):
+        billship_handler(self.request, None)
+        session = self.request.session
+        self.assertTrue(session['cartridge_downloads']['is_download_only'])
+        self.assertEqual(session['shipping_type'], 'Free shipping')
+
+    def test_cartridge_cart_not_download_only(self):
+        conventional_product_variation = ProductVariation.objects.create(
+            sku=self.sku, product=self.product)
+        self.request.cart.add_item(conventional_product_variation, 5)
+
+        billship_handler(self.request, None)
+        session = self.request.session
+        self.assertFalse(session['cartridge_downloads']['is_download_only'])
+        self.assertEqual(session['shipping_type'], 'Flat rate shipping')
+
+
 class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
     @classmethod
     def setUpClass(cls):
@@ -114,7 +155,7 @@ class OrderHandlerTests(test.TestCase, testbase.DownloadTestMixin):
         self.download.save()
 
         self.variation = ProductVariation.objects.create(
-            sku=self.variation_sku, product=self.product)
+            sku=self.sku, product=self.product)
 
         OrderItem.objects.create(order=self.order, sku=self.variation.sku)
 
@@ -457,13 +498,13 @@ class DownloadViewTests(test.TestCase):
             ['Download Limit Exceeded. Please contact us for assistance.'])
 
 
-class OverrideViewTests(test.TestCase):
+class OverrideViewTests(test.TestCase, testbase.DownloadTestMixin):
     @classmethod
     def setUpClass(cls):
         option = ProductOption.objects.create(type=1, name='Download Only')
         option.save()
 
-        cls.product = Product.objects.create(sku=1)
+        cls.product = Product.objects.create()
         cls.product.save()
 
         super(OverrideViewTests, cls).setUpClass()
@@ -482,15 +523,14 @@ class OverrideViewTests(test.TestCase):
         self.assertIsInstance(product_form.base_fields['quantity'].widget,
                               HiddenInput)
 
-    def test_cartridge_cart_not_download_only(self):
+    def test_cartridge_cart(self):
         self.request.cart = Cart.objects.create()
 
         conventional_product_variation = ProductVariation.objects.create(
-            product=self.product, sku=3)
-        conventional_product_variation.save()
+            sku=self.sku, product=self.product)
 
         digital_product_variation = ProductVariation.objects.create(
-            product=self.product, sku=4)
+            sku=self.sku, product=self.product)
         digital_product_variation.option1 = 'Download Only'
         digital_product_variation.save()
 
@@ -503,34 +543,11 @@ class OverrideViewTests(test.TestCase):
         conventional_form = cart_formset[0]
         digital_form = cart_formset[1]
 
-        self.assertFalse(
-            self.request.session['cartridge_downloads']['is_download_only'])
         self.assertIsInstance(conventional_form.fields['quantity'].widget,
                               NumberInput)
         self.assertIsInstance(digital_form.fields['quantity'].widget,
                               HiddenInput)
         self.assertEqual(conventional_form.instance.quantity, 5)
-        self.assertEqual(digital_form.instance.quantity, 1)
-
-    def test_cartridge_cart_is_download_only(self):
-        self.request.cart = Cart.objects.create()
-
-        digital_product_variation = ProductVariation.objects.create(
-            product=self.product, sku=4)
-        digital_product_variation.option1 = 'Download Only'
-        digital_product_variation.save()
-
-        self.request.cart.add_item(digital_product_variation, 5)
-
-        response = override_cartridge.cart(self.request, 'cart')
-        cart_formset = response.context_data['cart_formset']
-
-        digital_form = cart_formset[0]
-
-        self.assertTrue(
-            self.request.session['cartridge_downloads']['is_download_only'])
-        self.assertIsInstance(digital_form.fields['quantity'].widget,
-                              HiddenInput)
         self.assertEqual(digital_form.instance.quantity, 1)
 
     def test_filebrowser_delete(self):

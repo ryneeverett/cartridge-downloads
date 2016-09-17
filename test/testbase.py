@@ -1,7 +1,10 @@
+SKU = -1
+
+
 class DownloadTestMixin(object):
-    _variation_sku = -1
 
     @property
-    def variation_sku(self):
-        self._variation_sku += 1
-        return self._variation_sku
+    def sku(self):
+        global SKU
+        SKU += 1
+        return SKU
