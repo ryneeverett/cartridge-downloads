@@ -9,17 +9,14 @@ from django.shortcuts import redirect, render
 from django_downloadview import ObjectDownloadView
 
 from ..models import Acquisition, Download, Transaction
-from ..utils import session_downloads
+from ..utils import credential, session_downloads
 
 # https://docs.djangoproject.com/en/stable/topics/logging/#django-request
 logger = logging.getLogger('django.request')
 
 
 def authenticate(request, id, token):
-    with session_downloads(request) as session:
-        session['id'] = id
-        session['token'] = token
-
+    credential(request, {'id': id, 'token': token})
     return redirect(index)
 
 
