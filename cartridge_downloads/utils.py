@@ -6,6 +6,8 @@ try:
 except ImportError:  # django<1.10
     from django.core.urlresolvers import reverse
 
+from .models import Transaction
+
 
 @contextlib.contextmanager
 def session_downloads(request):
@@ -16,6 +18,7 @@ def session_downloads(request):
 
 
 def credential(request, credentials):
+    """ Distribute credentials. """
     with session_downloads(request) as session:
         session.update(credentials)
 
@@ -24,3 +27,14 @@ def credential(request, credentials):
         scheme='https' if not settings.DEBUG else request.scheme,
         host=request.get_host(),
         url=reverse('downloads_authenticate', kwargs=credentials))
+
+
+def transact(request):
+    """ Initialize transaction and distribute credentials. """
+    transaction = Transaction.objects.create()
+    credentials = transaction.make_credentials()
+    transaction.save()
+
+    credential(request, credentials)
+
+    return transaction

@@ -3,8 +3,8 @@ from cartridge.shop.checkout import default_billship_handler
 from cartridge.shop.models import Product, ProductVariation
 from cartridge.shop.utils import set_shipping
 
-from .models import Purchase, Transaction
-from .utils import credential
+from .models import Purchase
+from .utils import transact
 
 
 DOWNLOAD_ONLY_OPTION = False
@@ -41,9 +41,7 @@ def order_handler(request, order_form, order):
 
     if download_products.exists():
         # Initialize transaction and credentials.
-        transaction = Transaction.objects.create()
-        credential(request, transaction.make_credentials())
-        transaction.save()
+        transaction = transact(request)
 
         # Associate downloads with transaction.
         for product in download_products:

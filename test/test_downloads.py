@@ -35,7 +35,7 @@ from cartridge_downloads.models import (
 from cartridge_downloads.checkout import order_handler, billship_handler
 from cartridge_downloads.views import (
     views, override_cartridge, override_filebrowser)
-from cartridge_downloads.utils import credential, session_downloads
+from cartridge_downloads.utils import transact, session_downloads
 
 import testbase
 
@@ -396,9 +396,7 @@ class DownloadViewTests(test.TestCase):
         order = Order.objects.create()
         order.save()
 
-        transaction = Transaction.objects.create()
-        credential(self.request, transaction.make_credentials())
-        transaction.save()
+        transaction = transact(self.request)
 
         self.purchase = Purchase.objects.create(
             download=self.download,

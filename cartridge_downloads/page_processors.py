@@ -5,8 +5,8 @@ from mezzanine.forms.forms import FormForForm
 from mezzanine.forms.page_processors import form_processor
 from mezzanine.forms.models import FormEntry
 
-from .models import Promotion, Transaction
-from .utils import credential
+from .models import Promotion
+from .utils import transact
 
 
 def override_mezzanine_form_processor(request, page):
@@ -18,9 +18,7 @@ def override_mezzanine_form_processor(request, page):
 
         if form.is_valid() and downloads.exists():
             # Initialize transaction and credentials.
-            transaction = Transaction.objects.create()
-            credential(request, transaction.make_credentials())
-            transaction.save()
+            transaction = transact(request)
 
             # Call mezzanine's form_processor.
             form_processor(request, page)
